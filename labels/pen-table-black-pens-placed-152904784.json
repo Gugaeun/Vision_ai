@@ -1,0 +1,36 @@
+{
+  "version": "6.3.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "pen",
+      "points": [
+        [
+          696.9230769230769,
+          27.69230769230769
+        ],
+        [
+          19.029952670559396,
+          383.3582069638079
+        ],
+        [
+          75.38461538461539,
+          490.7692307692307
+        ],
+        [
+          753.2777396371329,
+          135.10333149773058
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "oriented_rectangle",
+      "flags": {},
+      "mask": null
+    }
+  ],
+  "imagePath": "pen-table-black-pens-placed-152904784.webp",
+  "imageData": null,
+  "imageHeight": 600,
+  "imageWidth": 800
+}

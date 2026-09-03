@@ -1,0 +1,36 @@
+{
+  "version": "6.3.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "pen",
+      "points": [
+        [
+          60.482758620689594,
+          246.39655172413794
+        ],
+        [
+          350.33975993146794,
+          345.24951748908546
+        ],
+        [
+          332.8965517241379,
+          396.39655172413796
+        ],
+        [
+          43.03955041335955,
+          297.54358595919047
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "oriented_rectangle",
+      "flags": {},
+      "mask": null
+    }
+  ],
+  "imagePath": "images (1).jpg",
+  "imageData": null,
+  "imageHeight": 679,
+  "imageWidth": 452
+}
