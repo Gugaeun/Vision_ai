@@ -41,11 +41,17 @@ yolo detect train data=dataset.yaml model=yolov8n.pt epochs=100 imgsz=640
 - `confusion_matrix.png`: 혼동 행렬
 - `results.csv`: epoch별 수치 데이터
 
+![학습 결과 그래프](results/results.png)
+
 데이터가 8장일 때보다 **17장으로 보강한 뒤 mAP50 최고 약 0.6대**까지 개선을 확인했습니다. 다만 학습 데이터가 여전히 적어 val/mAP 그래프가 다소 불안정하게 나타나는 한계가 있었습니다.
 
 ## 5. 예측(Predict) 결과 (`predicts/`)
 
 새로운 볼펜 이미지로 학습된 모델을 테스트한 결과이며, confidence threshold(`conf`) 값에 따른 변화를 비교하기 위해 3장을 순서대로 저장했습니다.
+
+| 초기 예측 (기본 conf) | conf=0.5 | conf=0.7 (최종) |
+|---|---|---|
+| ![초기 예측](predicts/images2-1.jpg) | ![conf 0.5](predicts/images2-2.jpg) | ![conf 0.7 최종](predicts/images2.jpg) |
 
 1. **초기 예측 결과** (기본 conf) - 볼펜의 여러 부위에 박스가 중복으로 겹쳐 나타남
 2. **conf=0.5 적용 결과** - 중복 박스가 일부 정리됨 (pen 0.55 / 0.86 / 0.69)
