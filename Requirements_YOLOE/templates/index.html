@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>상한 걸 놓치지 않았나요? — 냉장 진열대 품질 체크 (YOLOE)</title>
+
+<!--
+  왜 이 기술이 필요한가 (필수 요건 문장):
+  프롬프트 문장만 바꾸면 새로운 이상 유형도 재학습 없이 곧바로 탐지할 수 있기 때문이다.
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+  rel="stylesheet"
+/>
+
+<style>
+  :root {
+    --bg: #12161d;
+    --panel: #1b212b;
+    --panel-2: #212834;
+    --border: #2a3240;
+    --text: #ece7dd;
+    --text-dim: #97a1b0;
+    --text-faint: #626c7c;
+    --focus: #f2b705;
+    --focus-dim: #7a610c;
+    --away: #e8734a;
+    --ok: #49b3a4;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font-family: 'Inter', -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { min-height: 100vh; padding: 40px 24px 80px; }
+  .wrap { max-width: 1020px; margin: 0 auto; }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(28px, 4vw, 38px);
+    line-height: 1.2;
+    margin: 0 0 14px;
+    max-width: 16ch;
+    letter-spacing: -0.01em;
+  }
+  .lede { color: var(--text-dim); font-size: 15px; line-height: 1.65; max-width: 60ch; margin: 0 0 18px; }
+  .rationale {
+    border-left: 2px solid var(--focus-dim);
+    padding: 4px 0 4px 14px;
+    color: var(--text-faint);
+    font-size: 13.5px; line-height: 1.6; max-width: 60ch;
+    margin-bottom: 32px;
+  }
+  .rationale b { color: var(--text-dim); font-weight: 500; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+  }
+  .panel h2 {
+    font-size: 13px; font-weight: 600; color: var(--text-dim);
+    margin: 0; padding: 16px 18px; border-bottom: 1px solid var(--border);
+  }
+  .panel-body { padding: 18px; }
+
+  .grid2 { display: grid; grid-template-columns: 1.1fr 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 820px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* ---- 업로드 & ROI ---- */
+  .drop {
+    border: 1.5px dashed var(--border);
+    border-radius: 8px;
+    min-height: 220px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; color: var(--text-faint); font-size: 13.5px; text-align: center;
+    cursor: pointer; padding: 16px; position: relative;
+  }
+  .drop.has-image { border-style: solid; padding: 0; overflow: hidden; cursor: default; }
+  .drop input[type=file] { display: none; }
+
+  .canvas-wrap { position: relative; width: 100%; line-height: 0; }
+  #previewCanvas { width: 100%; display: block; cursor: crosshair; }
+
+  .roi-controls {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 4px 0; font-size: 12.5px; color: var(--text-faint);
+  }
+  .roi-controls button {
+    background: none; border: none; color: var(--focus);
+    font-size: 12.5px; cursor: pointer; padding: 0;
+  }
+
+  /* ---- 프롬프트 테이블 ---- */
+  table.prompts { width: 100%; border-collapse: collapse; }
+  table.prompts th {
+    text-align: left; font-size: 12px; color: var(--text-faint);
+    font-weight: 500; padding: 0 8px 8px; border-bottom: 1px solid var(--border);
+  }
+  table.prompts td { padding: 6px 8px; vertical-align: middle; }
+  table.prompts input[type=text] {
+    width: 100%; background: var(--panel-2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 6px; padding: 7px 9px; font-size: 13.5px;
+    font-family: inherit;
+  }
+  table.prompts input[type=text]:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .row-del {
+    background: none; border: none; color: var(--text-faint);
+    cursor: pointer; font-size: 16px; line-height: 1; padding: 4px 6px;
+  }
+  .row-del:hover { color: var(--away); }
+  .add-row-btn {
+    margin-top: 10px; background: none; border: 1px dashed var(--border);
+    color: var(--text-dim); border-radius: 6px; padding: 8px 12px;
+    font-size: 13px; cursor: pointer; width: 100%;
+  }
+  .add-row-btn:hover { border-color: var(--focus-dim); color: var(--focus); }
+
+  .threshold-row { margin-top: 18px; }
+  .threshold-row label { font-size: 13px; color: var(--text-dim); display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .threshold-row .val { font-family: 'JetBrains Mono', monospace; color: var(--focus); }
+  input[type=range] { width: 100%; accent-color: var(--focus); }
+  .threshold-hint { font-size: 12px; color: var(--text-faint); margin-top: 6px; }
+
+  button.btn {
+    appearance: none; border: 1px solid var(--border); background: var(--panel-2);
+    color: var(--text); font-size: 13.5px; font-weight: 600; padding: 11px 18px;
+    border-radius: 7px; cursor: pointer; transition: background .15s ease, opacity .15s ease;
+  }
+  button.btn:hover:not(:disabled) { border-color: #3a4454; }
+  button.btn:disabled { opacity: .4; cursor: not-allowed; }
+  button.btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  button.btn.primary { background: var(--focus); border-color: var(--focus); color: #1a1305; width: 100%; margin-top: 20px; }
+  button.btn.primary:hover:not(:disabled) { background: #ffc821; }
+
+  /* ---- 결과 ---- */
+  .result-summary {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 16px 18px; border-bottom: 1px solid var(--border);
+  }
+  .result-summary .count { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; color: var(--away); }
+  .result-summary .count.zero { color: var(--ok); }
+  .result-img {
+    width: 100%; max-height: 60vh; object-fit: contain;
+    display: block; margin: 0 auto; background: #0a0d12;
+    border-bottom: 1px solid var(--border);
+  }
+  table.detections { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.detections th {
+    text-align: left; color: var(--text-faint); font-weight: 500; font-size: 12px;
+    padding: 12px 18px 8px;
+  }
+  table.detections td { padding: 8px 18px; border-top: 1px solid var(--border); }
+  table.detections td.conf { font-family: 'JetBrains Mono', monospace; }
+  .empty-note { padding: 18px; color: var(--text-faint); font-size: 13.5px; }
+
+  .status-line {
+    display: none; align-items: center; gap: 10px; color: var(--text-dim);
+    font-size: 13.5px; padding: 14px 18px;
+  }
+  .status-line.show { display: flex; }
+  .status-line.error { color: #f0a888; }
+  .dot-spin {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--focus);
+    animation: pulse 1.2s ease-in-out infinite; flex: none;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.35;transform:scale(.7)} }
+  @media (prefers-reduced-motion: reduce) { .dot-spin { animation: none; } }
+
+  footer { margin-top: 30px; color: var(--text-faint); font-size: 12.5px; line-height: 1.7; max-width: 62ch; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>상한 걸 놓치지 않았나요?</h1>
+    <p class="lede">
+      냉장 진열대 사진을 올리면, 원하는 이상 유형을 문장으로 지정해 즉석에서 찾아냅니다.
+      새로운 이상 유형이 생겨도 프롬프트만 추가하면 되고, 재학습은 필요 없습니다.
+    </p>
+    <p class="rationale">
+      <b>왜 이 기술이 필요한가.</b>
+      프롬프트 문장만 바꾸면 새로운 이상 유형도 재학습 없이 곧바로 탐지할 수 있기 때문이다.
+    </p>
+  </header>
+
+  <div class="grid2">
+
+    <div class="panel">
+      <h2>1. 진열대 사진</h2>
+      <div class="panel-body">
+        <div class="drop" id="dropZone">
+          <span id="dropHint">클릭하거나 이미지를 드래그해서 올려주세요</span>
+          <input type="file" id="fileInput" accept="image/*" />
+          <div class="canvas-wrap" id="canvasWrap" style="display:none;">
+            <canvas id="previewCanvas"></canvas>
+          </div>
+        </div>
+        <div class="roi-controls" id="roiControls" style="display:none;">
+          <span id="roiHint">사진 위를 드래그하면 검사할 영역(관심영역)만 지정할 수 있어요</span>
+          <button id="roiClear" type="button">전체 영역 사용</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>2. 탐지할 이상 유형 (프롬프트)</h2>
+      <div class="panel-body">
+        <table class="prompts">
+          <thead><tr><th style="width:40%;">표시 이름</th><th>탐지 프롬프트 (영어)</th><th></th></tr></thead>
+          <tbody id="promptRows"></tbody>
+        </table>
+        <button class="add-row-btn" id="addRow" type="button">+ 항목 추가</button>
+
+        <div class="threshold-row">
+          <label>민감도(신뢰도 임계값) <span class="val" id="thresholdVal">0.20</span></label>
+          <input type="range" id="thresholdSlider" min="0.05" max="0.6" step="0.01" value="0.20" />
+          <p class="threshold-hint">낮출수록 더 많이 잡아내지만 오탐이 늘고, 높일수록 확실한 것만 남지만 놓칠 수 있어요.</p>
+        </div>
+
+        <button class="btn primary" id="btnDetect">검사 실행</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="panel" id="statusPanel">
+    <div class="status-line" id="statusLine"><span class="dot-spin"></span><span id="statusText"></span></div>
+  </div>
+
+  <div class="panel" id="resultPanel" style="display:none;">
+    <h2>3. 검사 결과</h2>
+    <div class="result-summary">
+      <span id="resultLabel">이상 항목</span>
+      <span class="count" id="resultCount">0건</span>
+    </div>
+    <img id="resultImg" class="result-img" alt="탐지 결과 이미지" />
+    <table class="detections" id="detTable" style="display:none;">
+      <thead><tr><th>항목</th><th>신뢰도</th><th>위치(x1,y1,x2,y2)</th></tr></thead>
+      <tbody id="detBody"></tbody>
+    </table>
+    <p class="empty-note" id="emptyNote" style="display:none;">지정한 임계값 안에서는 이상 항목이 발견되지 않았어요.</p>
+  </div>
+
+  <footer>
+    프롬프트는 영어 문장으로 입력해주세요 (탐지 모델이 영어 텍스트 인코더를 사용합니다).
+    같은 사진이라도 프롬프트 문구·민감도에 따라 결과가 달라질 수 있어, 실제 매장에 적용하기 전에
+    여러 문구와 임계값으로 실험해보는 걸 권장합니다.
+  </footer>
+
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+const DEFAULT_PROMPTS = [
+  ["상한 과일", "rotten fruit"],
+  ["곰팡이 핀 채소", "moldy vegetable"],
+  ["포장 훼손", "damaged packaging"],
+  ["찌그러진 캔", "dented can"],
+  ["훼손된 라벨", "torn label"],
+  ["액체 흘림", "spilled liquid"],
+];
+
+const promptRows = $("promptRows");
+function addPromptRow(ko = "", en = "") {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td><input type="text" class="ko" value="${ko}" placeholder="예: 찌그러진 캔" /></td>
+    <td><input type="text" class="en" value="${en}" placeholder="e.g. dented can" /></td>
+    <td><button class="row-del" type="button" title="삭제">×</button></td>
+  `;
+  tr.querySelector(".row-del").addEventListener("click", () => tr.remove());
+  promptRows.appendChild(tr);
+}
+DEFAULT_PROMPTS.forEach(([ko, en]) => addPromptRow(ko, en));
+$("addRow").addEventListener("click", () => addPromptRow());
+
+$("thresholdSlider").addEventListener("input", (e) => {
+  $("thresholdVal").textContent = parseFloat(e.target.value).toFixed(2);
+});
+
+// ---------------------------------------------------------------
+// 업로드 + 미리보기 + ROI 드래그 선택
+// ---------------------------------------------------------------
+const dropZone = $("dropZone");
+const fileInput = $("fileInput");
+const canvasWrap = $("canvasWrap");
+const canvas = $("previewCanvas");
+const ctx = canvas.getContext("2d");
+const roiControls = $("roiControls");
+
+let originalImage = null; // HTMLImageElement
+let roi = null;            // {x1,y1,x2,y2} in natural image pixel coords, or null
+let dragging = false;
+let dragStart = null;
+
+dropZone.addEventListener("click", () => { if (!originalImage) fileInput.click(); });
+dropZone.addEventListener("dragover", (e) => { e.preventDefault(); });
+dropZone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener("change", (e) => {
+  if (e.target.files && e.target.files[0]) loadFile(e.target.files[0]);
+});
+
+function loadFile(file) {
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      originalImage = img;
+      roi = null;
+      $("dropHint").style.display = "none";
+      dropZone.classList.add("has-image");
+      canvasWrap.style.display = "block";
+      roiControls.style.display = "flex";
+      drawCanvas();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function drawCanvas() {
+  if (!originalImage) return;
+  canvas.width = originalImage.naturalWidth;
+  canvas.height = originalImage.naturalHeight;
+  ctx.drawImage(originalImage, 0, 0);
+  if (roi) {
+    ctx.strokeStyle = "#f2b705";
+    ctx.lineWidth = Math.max(2, canvas.width * 0.004);
+    ctx.setLineDash([8, 6]);
+    ctx.strokeRect(roi.x1, roi.y1, roi.x2 - roi.x1, roi.y2 - roi.y1);
+    ctx.setLineDash([]);
+  }
+}
+
+function canvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top) * scaleY
+  };
+}
+canvas.addEventListener("mousedown", (e) => {
+  dragging = true;
+  dragStart = canvasPos(e);
+});
+canvas.addEventListener("mousemove", (e) => {
+  if (!dragging) return;
+  const p = canvasPos(e);
+  roi = {
+    x1: Math.min(dragStart.x, p.x), y1: Math.min(dragStart.y, p.y),
+    x2: Math.max(dragStart.x, p.x), y2: Math.max(dragStart.y, p.y)
+  };
+  drawCanvas();
+});
+window.addEventListener("mouseup", () => { dragging = false; });
+$("roiClear").addEventListener("click", () => { roi = null; drawCanvas(); });
+
+// ---------------------------------------------------------------
+// 검사 실행
+// ---------------------------------------------------------------
+const statusLine = $("statusLine");
+const statusText = $("statusText");
+function showStatus(text, isError) {
+  statusText.textContent = text;
+  statusLine.classList.add("show");
+  statusLine.classList.toggle("error", !!isError);
+}
+function hideStatus() { statusLine.classList.remove("show"); }
+
+$("btnDetect").addEventListener("click", async () => {
+  if (!originalImage) { showStatus("먼저 진열대 사진을 올려주세요.", true); return; }
+
+  const rows = Array.from(promptRows.querySelectorAll("tr"));
+  const prompts = [];
+  for (const row of rows) {
+    const en = row.querySelector(".en").value.trim();
+    if (en) prompts.push(en);
+  }
+  if (prompts.length === 0) { showStatus("탐지 프롬프트를 1개 이상 입력해주세요.", true); return; }
+
+  const threshold = parseFloat($("thresholdSlider").value);
+
+  // ROI가 지정되어 있으면 해당 영역만 잘라서 전송
+  const sendCanvas = document.createElement("canvas");
+  let sw, sh, sx, sy;
+  if (roi) {
+    sx = roi.x1; sy = roi.y1; sw = roi.x2 - roi.x1; sh = roi.y2 - roi.y1;
+  } else {
+    sx = 0; sy = 0; sw = originalImage.naturalWidth; sh = originalImage.naturalHeight;
+  }
+  sendCanvas.width = Math.max(1, Math.round(sw));
+  sendCanvas.height = Math.max(1, Math.round(sh));
+  sendCanvas.getContext("2d").drawImage(originalImage, sx, sy, sw, sh, 0, 0, sendCanvas.width, sendCanvas.height);
+
+  $("btnDetect").disabled = true;
+  $("resultPanel").style.display = "none";
+  showStatus("탐지 중입니다...", false);
+
+  try {
+    const blob = await new Promise((resolve) => sendCanvas.toBlob(resolve, "image/png"));
+    const formData = new FormData();
+    formData.append("image", blob, "shelf.png");
+    formData.append("prompts", prompts.join(","));
+    formData.append("threshold", threshold);
+
+    const res = await fetch("/api/detect", { method: "POST", body: formData });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showStatus(data.error || "오류가 발생했습니다.", true);
+      return;
+    }
+    hideStatus();
+    renderResult(data);
+  } catch (err) {
+    showStatus("서버와 통신하지 못했습니다. 서버가 실행 중인지 확인해주세요.", true);
+  } finally {
+    $("btnDetect").disabled = false;
+  }
+});
+
+function renderResult(data) {
+  $("resultPanel").style.display = "block";
+  $("resultImg").src = data.image;
+  const count = data.count;
+  const countEl = $("resultCount");
+  countEl.textContent = `${count}건`;
+  countEl.classList.toggle("zero", count === 0);
+
+  const detBody = $("detBody");
+  detBody.innerHTML = "";
+  if (count === 0) {
+    $("detTable").style.display = "none";
+    $("emptyNote").style.display = "block";
+  } else {
+    $("detTable").style.display = "table";
+    $("emptyNote").style.display = "none";
+    for (const d of data.detections) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${d.label}</td><td class="conf">${d.confidence}</td><td class="conf">${d.box.join(", ")}</td>`;
+      detBody.appendChild(tr);
+    }
+  }
+  $("resultPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+</script>
+</body>
+</html>

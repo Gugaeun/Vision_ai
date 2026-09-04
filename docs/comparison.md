@@ -2,17 +2,17 @@
 
 마트/편의점 냉장 진열대 사진을 올리면, **원하는 이상 유형을 프롬프트 문장으로 지정**해 즉석에서 찾아내는 데모입니다. 상한 과일, 곰팡이 핀 채소, 포장 훼손, 찌그러진 캔, 훼손된 라벨, 액체 흘림처럼 흔한 결함 유형을, 재학습 없이 프롬프트만 바꿔서 바로 탐지할 수 있습니다.
 
-같은 UI/UX로, **서로 다른 두 가지 Open-Vocabulary(개방형 어휘) 탐지 모델**을 각각 구현해 비교해볼 수 있도록 만들었습니다. 각 구현의 실행 방법·사용 예시는 [`Requirements_DINO/README.md`](../Requirements_DINO)와 [`Requirements_YOLO/README.md`](../Requirements_YOLO)를 참고하세요. 여기서는 둘을 비교한 내용만 다룹니다.
+같은 UI/UX로, **서로 다른 세 가지 Open-Vocabulary(개방형 어휘) 탐지 모델**을 각각 구현해 비교해볼 수 있도록 만들었습니다. 각 구현의 실행 방법·사용 예시는 [`Requirements_DINO/README.md`](../Requirements_DINO), [`Requirements_YOLO/README.md`](../Requirements_YOLO), [`Requirements_YOLOE/README.md`](../Requirements_YOLOE)를 참고하세요. 여기서는 셋을 비교한 내용만 다룹니다.
 
-| | [`Requirements_DINO/`](../Requirements_DINO) | [`Requirements_YOLO/`](../Requirements_YOLO) |
-|---|---|---|
-| 모델 | Grounding DINO (`IDEA-Research/grounding-dino-base`) | YOLO-World (`yolov8x-worldv2`) |
-| 라이브러리 | HuggingFace `transformers` | `ultralytics` |
-| 방식 | 이미지 + 텍스트 문장을 함께 인코딩해 매칭 영역을 찾는 phrase grounding | 프롬프트를 클래스로 등록(`set_classes`)해 일반 객체탐지처럼 처리하는 OVD |
-| 중복 박스 제거(NMS) | 직접 구현 (아래 "겪었던 문제" 참고) | ultralytics 내부에서 자동 처리 |
-| 임계값 | `box_threshold`(영역), `text_threshold`(문구 일치도) 2개 | `threshold`(confidence) 1개 |
+| | [`Requirements_DINO/`](../Requirements_DINO) | [`Requirements_YOLO/`](../Requirements_YOLO) | [`Requirements_YOLOE/`](../Requirements_YOLOE) |
+|---|---|---|---|
+| 모델 | Grounding DINO (`IDEA-Research/grounding-dino-base`) | YOLO-World (`yolov8x-worldv2`) | YOLOE (`yoloe-11l-seg`) |
+| 라이브러리 | HuggingFace `transformers` | `ultralytics` | `ultralytics` |
+| 방식 | 이미지 + 텍스트 문장을 함께 인코딩해 매칭 영역을 찾는 phrase grounding | 프롬프트를 클래스로 등록(`set_classes`)해 일반 객체탐지처럼 처리하는 OVD | 프롬프트를 텍스트 임베딩(`get_text_pe`)으로 바꿔 클래스로 등록하는 OVD, 원래는 세그멘테이션 모델 |
+| 중복 박스 제거(NMS) | 직접 구현 (아래 "겪었던 문제" 참고) | ultralytics 내부에서 자동 처리 | ultralytics 내부에서 자동 처리 |
+| 임계값 | `box_threshold`(영역), `text_threshold`(문구 일치도) 2개 | `threshold`(confidence) 1개 | `threshold`(confidence) 1개 |
 
-두 앱 다 독립 실행되는 Flask 서버이고, 포트가 겹치므로(둘 다 5000) 동시에 켜지 마세요.
+세 앱 다 독립 실행되는 Flask 서버이고, 포트가 겹치므로(다 5000번) 동시에 켜지 마세요.
 
 ## 겪었던 문제와 해결 (Grounding DINO 기준)
 
@@ -48,12 +48,12 @@
 | YOLO-World x (`yolov8x-worldv2`) | 0.413 (`rotten fruit`) | 0.345 (`rotten fruit`) | 정답이 근소하게 높지만 격차가 좁아 임계값을 매우 정밀하게 맞춰야 함 |
 | YOLOE 11l (`yoloe-11l-seg`) | 0.251 (`moldy vegetable`) | **0.317** (`rotten fruit`) | 오답이 정답보다 높게 나옴(역전) — 이 과제엔 부적합 |
 
-실제 웹 UI에서 이 표의 수치가 어떻게 나타나는지 두 가지를 비교해보면:
+실제 웹 UI에서 이 표의 수치가 어떻게 나타나는지 비교해보면:
 
-| Grounding DINO base — 곰팡이 토마토만 정확히 탐지 | YOLO-World x — 정상 토마토를 오탐 |
-|---|---|
-| ![DINO 결과](../Requirements_DINO/docs/images/detect-result.png) | ![YOLO-World 결과](../Requirements_YOLO/docs/images/false-positive-2.png) |
-| `moldy vegetable 0.655` 하나만 잡히고 정상 토마토는 걸러짐 | `rotten fruit 0.40`으로 정상 토마토가 잡히고, 진짜 곰팡이 토마토는 상위 결과에 없음 |
+| Grounding DINO base — 곰팡이 토마토만 정확히 탐지 | YOLO-World x — 정상 토마토를 오탐 | YOLOE — 오답이 정답보다 신뢰도가 높음 |
+|---|---|---|
+| ![DINO 결과](../Requirements_DINO/docs/images/detect-result.png) | ![YOLO-World 결과](../Requirements_YOLO/docs/images/false-positive-2.png) | ![YOLOE 결과](../Requirements_YOLOE/docs/images/detect-result.png) |
+| `moldy vegetable 0.655` 하나만 잡히고 정상 토마토는 걸러짐 | `rotten fruit 0.40`으로 정상 토마토가 잡히고, 진짜 곰팡이 토마토는 상위 결과에 없음 | 정상 토마토가 `rotten fruit 0.32`, 진짜 곰팡이 토마토는 `moldy vegetable 0.25`로 오답이 더 높게 나옴 |
 
 **결론**: OVD(open-vocabulary detection) 모델도 종류·크기에 따라 "정상과 미세한 이상을 구분하는" 정교함 차이가 상당히 큽니다. 이번 과제(정상 vs 살짝 상한 것 구분)에는 Grounding DINO base가 가장 안정적이었고, YOLO-World는 작은 모델(s)로는 부족해서 큰 모델(x)로 올려야 했으며, 그마저도 DINO만큼 명확한 격차는 아니었습니다. 최신·대형 모델인 YOLOE조차 이 특정 케이스에서는 더 나은 성능을 보장하지 않았습니다 — 모델을 고를 땐 "최신/크다"보다 실제 과제로 직접 검증하는 게 중요하다는 걸 보여주는 사례입니다.
 
