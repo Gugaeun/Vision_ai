@@ -1,0 +1,16 @@
+# 모델 가중치 (자동 다운로드되므로 커밋하지 않음)
+*.pt
+*.pth
+*.ts
+*.onnx
+*.engine
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
