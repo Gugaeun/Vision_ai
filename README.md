@@ -43,17 +43,7 @@ python app.py
 
 실행하면 `http://localhost:5000`이 자동으로 열립니다. 처음 실행 시 모델 가중치를 다운로드하므로 시간이 걸릴 수 있습니다 (DINO base, YOLO-World x 둘 다 수백MB대입니다 — 아래에서 설명하듯, 가벼운 small 버전은 이 과제엔 정확도가 너무 부족해서 x 버전으로 올렸습니다).
 
-### 사용 예시 (Grounding DINO)
-
-정상 토마토와 곰팡이 핀 토마토를 나란히 올리고, 프롬프트 `moldy vegetable` / `rotten fruit`, `box_threshold 0.51`로 검사한 결과입니다.
-
-**1. 사진 업로드 + 프롬프트 설정**
-
-![입력 화면](Requirements_DINO/docs/images/detect-input.png)
-
-**2. 검사 결과** — 정상 토마토는 걸러지고, 곰팡이 핀 토마토만 정확히 탐지됨
-
-![검사 결과 화면](Requirements_DINO/docs/images/detect-result.png)
+실제 사용 화면(업로드, 프롬프트 설정, 검사 결과)은 [`Requirements_DINO/README.md`](Requirements_DINO#사용-예시)에서 확인할 수 있습니다.
 
 ### 겪었던 문제와 해결 (Grounding DINO 기준)
 
