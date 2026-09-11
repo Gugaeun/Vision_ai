@@ -53,11 +53,9 @@ python 4_realtime_demo.py
 
 ## 실행 결과
 
-| thinking 🤔 | excited 🙌 | tired 🥱 |
-|---|---|---|
-| ![thinking](docs/images/thinking.png) | ![excited](docs/images/excited.png) | ![tired](docs/images/tired.png) |
-
-`neutral`(평온 😐)은 별도 캡처 없이, 가만히 앉아있을 때 정상적으로 분류되는 것으로 확인했습니다.
+| thinking 🤔 | excited 🙌 | tired 🥱 | neutral 😐 |
+|---|---|---|---|
+| ![thinking](docs/images/thinking.png) | ![excited](docs/images/excited.png) | ![tired](docs/images/tired.png) | ![neutral](docs/images/neutral.png) |
 
 ## 겪었던 문제: 카메라 거리가 달라지면 오작동함
 
