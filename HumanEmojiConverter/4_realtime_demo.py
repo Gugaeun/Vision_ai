@@ -44,6 +44,7 @@ MOOD_INFO = {
     'thinking': ('생각 중', (255, 200, 0)),
     'excited': ('신남!', (0, 165, 255)),
     'tired': ('지침...', (150, 150, 150)),
+    'neutral': ('평온', (180, 220, 180)),
 }
 
 FONT_PATH = "C:\\Windows\\Fonts\\malgun.ttf"
@@ -75,6 +76,11 @@ def draw_emoji_face(frame, center, radius, mood, color):
         cv2.ellipse(frame, (x - eye_dx, y - eye_dy), (eye_r + 2, eye_r), 0, 200, 340, outline, 2)
         cv2.ellipse(frame, (x + eye_dx, y - eye_dy), (eye_r + 2, eye_r), 0, 200, 340, outline, 2)
         cv2.ellipse(frame, (x, y + radius // 2), (radius // 4, radius // 5), 0, 0, 360, outline, 2)
+    elif mood == 'neutral':
+        cv2.circle(frame, (x - eye_dx, y - eye_dy), eye_r, outline, -1)
+        cv2.circle(frame, (x + eye_dx, y - eye_dy), eye_r, outline, -1)
+        cv2.line(frame, (x - radius // 3, y + radius // 2),
+                 (x + radius // 3, y + radius // 2), outline, 3)
 
 
 def draw_korean_text(frame, text, pos, color_rgb):

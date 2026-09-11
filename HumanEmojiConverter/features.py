@@ -39,12 +39,22 @@ def compute_derived_features(row):
         normed[f'nx{j}'] = float((row[f'x{j}'] - cx) / scale)
         normed[f'ny{j}'] = float((row[f'y{j}'] - cy) / scale)
 
+    def is_missing(idx):
+        # YOLO-pose는 가려지거나 화면 밖으로 나간 keypoint를 (0,0)으로 반환하는 경우가 있다.
+        # 사람이 이미지 맨 왼쪽 위 모서리(0,0)에 실제로 있을 리는 없으므로, 이걸 "미검출"로 간주한다.
+        # (이 체크를 안 하면, 손이 프레임 밖으로 나갔을 때 정규화 좌표가 "어깨보다 훨씬 위"로
+        #  계산돼서 가만히 있어도 excited로 오판하는 버그가 생긴다.)
+        return abs(row[f'x{idx}']) < 1e-6 and abs(row[f'y{idx}']) < 1e-6
+
     nx, ny = normed[f'nx{NOSE}'], normed[f'ny{NOSE}']
     lwx, lwy = normed[f'nx{L_WRIST}'], normed[f'ny{L_WRIST}']
     rwx, rwy = normed[f'nx{R_WRIST}'], normed[f'ny{R_WRIST}']
 
-    dist_l = float(np.hypot(lwx - nx, lwy - ny))
-    dist_r = float(np.hypot(rwx - nx, rwy - ny))
+    FAR = 100.0          # 손-얼굴 거리 미검출 시 "확실히 멀다"로 취급
+    NOT_RAISED = -100.0  # 손 들어올림 미검출 시 "확실히 안 들었다"로 취급
+
+    dist_l = FAR if is_missing(L_WRIST) else float(np.hypot(lwx - nx, lwy - ny))
+    dist_r = FAR if is_missing(R_WRIST) else float(np.hypot(rwx - nx, rwy - ny))
 
     # 한 손만 얼굴 가까이: thinking(턱 괴기)일 때 작아짐 (반대쪽 손은 멀어도 상관없음)
     hand_face_dist_min = min(dist_l, dist_r)
@@ -54,7 +64,9 @@ def compute_derived_features(row):
 
     # 손 들어올림 정도: 어깨 중심(정규화 후 y=0) 대비 손목이 얼마나 위에 있는지.
     # 양손 들기(excited)일 때 커짐. 두 손 다 올라가야 커지도록 min 사용.
-    hands_raised = float(min(-lwy, -rwy))
+    raised_l = NOT_RAISED if is_missing(L_WRIST) else -lwy
+    raised_r = NOT_RAISED if is_missing(R_WRIST) else -rwy
+    hands_raised = float(min(raised_l, raised_r))
 
     result = dict(normed)
     result['hand_face_dist_min'] = hand_face_dist_min
