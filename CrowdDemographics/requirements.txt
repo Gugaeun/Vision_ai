@@ -1,0 +1,5 @@
+deepface
+opencv-contrib-python==4.14.0.94
+matplotlib
+tf-keras
+retina-face

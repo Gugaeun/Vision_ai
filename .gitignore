@@ -11,6 +11,13 @@ __pycache__/
 .venv/
 venv/
 
+# 대용량/개인 데이터 (실수로 커밋되지 않도록)
+HumanEmojiConverter/pose_img/person/*/*.jpg
+HumanEmojiConverter/pose_img/person/keypoints.csv
+CrowdDemographics/videos/*.mp4
+CrowdDemographics/videos/*.avi
+CrowdDemographics/videos/*.mov
+
 # OS
 .DS_Store
 Thumbs.db
