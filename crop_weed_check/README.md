@@ -86,9 +86,9 @@
 |---|---|---|
 | [<img src="docs/images/gallery_stubble_thumb.png" width="320">](docs/images/gallery_stubble.png) | [<img src="docs/images/gallery_sunflower_thumb.png" width="320">](docs/images/gallery_sunflower.png) | [<img src="docs/images/gallery_cabbage_thumb.png" width="320">](docs/images/gallery_cabbage.png) |
 
-| 배경 나무 (배경이 지배) | 간격 넓은 채소밭 (밀도 가정 어긋남) | |
-|---|---|---|
-| [<img src="docs/images/gallery_background_thumb.png" width="320">](docs/images/gallery_background.png) | [<img src="docs/images/gallery_spacing_thumb.png" width="320">](docs/images/gallery_spacing.png) | |
+| 배경 나무 (배경이 지배) | 간격 넓은 채소밭 (밀도 가정 어긋남) |
+|---|---|
+| [<img src="docs/images/gallery_background_thumb.png" width="320">](docs/images/gallery_background.png) | [<img src="docs/images/gallery_spacing_thumb.png" width="320">](docs/images/gallery_spacing.png) |
 
 **정리하면**, 이 규칙 기반 파이프라인이 잘 동작하려면 다섯 조건이 동시에 맞아야 합니다:
 1. **살아있는 초록 식생**이어야 함 (마르거나 추수된 상태는 안 됨, 잎 색이 초록 계열이어야 함)
