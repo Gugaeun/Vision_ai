@@ -68,27 +68,27 @@
 
 **수정**: 진짜 식생은 항상 초록(G)이 파랑(B)보다 커야 한다는 점에 착안해, `segmentation.py`의 `compute_vegetation_mask()`(세그멘테이션·탐지가 공용으로 쓰도록 공통 함수로 뺐습니다)에 "B가 G보다 크면 식생 후보에서 제외" 조건을 추가했습니다. 수정 후 같은 사진으로 재검증하니 감지 개체 수가 475개→290개로 줄었고(하늘의 가짜 박스들이 사라진 만큼), 기존에 잘 되던 대두밭·옥수수밭 영상 결과는 그대로 유지되는 걸 확인했습니다(회귀 없음).
 
-**성공 사례 3개** (클릭하면 원본 크기로 볼 수 있습니다):
+**성공 사례 3개**:
 
 | 대두밭 사진 | 옥수수밭 영상 | 옥수수밭 사진 |
 |---|---|---|
-| [<img src="docs/images/result1_thumb.png" width="320">](docs/images/result1.png) | [<img src="docs/images/video_demo_thumb.png" width="320">](docs/images/video_demo.png) | [<img src="docs/images/gallery_corn_thumb.png" width="320">](docs/images/gallery_corn.png) |
+| <img src="docs/images/result1_thumb.png" width="320"> | <img src="docs/images/video_demo_thumb.png" width="320"> | <img src="docs/images/gallery_corn_thumb.png" width="320"> |
 
 > **참고: 대두밭 사진은 "성공"인데 왜 방제 대상이 0개인가?** 이 사진의 판정 자체(어떤 개체가 작물이고 어떤 개체가 잡초인지)는 정확한데, 우연히 감지된 잡초들이 전부 **두 작물 줄 사이의 빈 틈(사람이 다니는 통로 같은 흙 부분)**에 몰려 있어서 그렇습니다. 이 파이프라인의 판단 로직은 "고랑 안에 섞여 자란 잡초만 방제 대상"으로 보기 때문에(고랑 밖 잡초는 작물과 경쟁하지 않으니 급하지 않다는 논리), 고랑 밖에 있는 잡초는 정확히 "무시"로 분류됩니다. 여기서 "성공"의 기준은 방제 대상 개수가 아니라 **crop/weed 개별 판정 자체가 맞는지**입니다 — 만약 잡초가 작물들 사이에 섞여 자라고 있었다면 방제 대상(빨간 박스)으로 잡혔을 것입니다.
 
-**실패 사례 8개** (위쪽 텍스트가 영상 실시간 데모의 오버레이 정보입니다. 클릭하면 원본 크기로 볼 수 있습니다):
+**실패 사례 8개** (위쪽 텍스트가 영상 실시간 데모의 오버레이 정보입니다):
 
 | 잔디밭 (밭 아님) | 지면 눈높이 (각도 낮음) | 고고도 드론 (너무 높음) |
 |---|---|---|
-| [<img src="docs/images/gallery_grass_thumb.png" width="320">](docs/images/gallery_grass.png) | [<img src="docs/images/gallery_ground_thumb.png" width="320">](docs/images/gallery_ground.png) | [<img src="docs/images/gallery_highalt_thumb.png" width="320">](docs/images/gallery_highalt.png) |
+| <img src="docs/images/gallery_grass_thumb.png" width="320"> | <img src="docs/images/gallery_ground_thumb.png" width="320"> | <img src="docs/images/gallery_highalt_thumb.png" width="320"> |
 
 | 추수 후 (식생 없음) | 시든 해바라기 (캐노피 높이) | 양배추 (과다 분할) |
 |---|---|---|
-| [<img src="docs/images/gallery_stubble_thumb.png" width="320">](docs/images/gallery_stubble.png) | [<img src="docs/images/gallery_sunflower_thumb.png" width="320">](docs/images/gallery_sunflower.png) | [<img src="docs/images/gallery_cabbage_thumb.png" width="320">](docs/images/gallery_cabbage.png) |
+| <img src="docs/images/gallery_stubble_thumb.png" width="320"> | <img src="docs/images/gallery_sunflower_thumb.png" width="320"> | <img src="docs/images/gallery_cabbage_thumb.png" width="320"> |
 
 | 배경 나무 (배경이 지배) | 간격 넓은 채소밭 (밀도 가정 어긋남) | |
 |---|---|---|
-| [<img src="docs/images/gallery_background_thumb.png" width="320">](docs/images/gallery_background.png) | [<img src="docs/images/gallery_spacing_thumb.png" width="320">](docs/images/gallery_spacing.png) | |
+| <img src="docs/images/gallery_background_thumb.png" width="320"> | <img src="docs/images/gallery_spacing_thumb.png" width="320"> | |
 
 **정리하면**, 이 규칙 기반 파이프라인이 잘 동작하려면 다섯 조건이 동시에 맞아야 합니다:
 1. **살아있는 초록 식생**이어야 함 (마르거나 추수된 상태는 안 됨, 잎 색이 초록 계열이어야 함)
