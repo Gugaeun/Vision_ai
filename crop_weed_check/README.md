@@ -55,17 +55,17 @@
 
 | 대두밭 사진 | 옥수수밭 영상 |
 |---|---|
-| [<img src="docs/images/result1_thumb.png" width="380">](docs/images/result1.png) | [<img src="docs/images/video_demo_thumb.png" width="380">](docs/images/video_demo.png) |
+| [<img src="docs/images/result1_thumb.png" width="480">](docs/images/result1.png) | [<img src="docs/images/video_demo_thumb.png" width="480">](docs/images/video_demo.png) |
 
 **실패 사례 6개** (위쪽 텍스트가 영상 실시간 데모의 오버레이 정보입니다. 클릭하면 원본 크기로 볼 수 있습니다):
 
 | 잔디밭 (밭 아님) | 지면 눈높이 (각도 낮음) | 고고도 드론 (너무 높음) |
 |---|---|---|
-| [<img src="docs/images/gallery_grass_thumb.png" width="260">](docs/images/gallery_grass.png) | [<img src="docs/images/gallery_ground_thumb.png" width="260">](docs/images/gallery_ground.png) | [<img src="docs/images/gallery_highalt_thumb.png" width="260">](docs/images/gallery_highalt.png) |
+| [<img src="docs/images/gallery_grass_thumb.png" width="320">](docs/images/gallery_grass.png) | [<img src="docs/images/gallery_ground_thumb.png" width="320">](docs/images/gallery_ground.png) | [<img src="docs/images/gallery_highalt_thumb.png" width="320">](docs/images/gallery_highalt.png) |
 
 | 추수 후 (식생 없음) | 시든 해바라기 (캐노피 높이) | 양배추 (과다 분할) |
 |---|---|---|
-| [<img src="docs/images/gallery_stubble_thumb.png" width="260">](docs/images/gallery_stubble.png) | [<img src="docs/images/gallery_sunflower_thumb.png" width="260">](docs/images/gallery_sunflower.png) | [<img src="docs/images/gallery_cabbage_thumb.png" width="260">](docs/images/gallery_cabbage.png) |
+| [<img src="docs/images/gallery_stubble_thumb.png" width="320">](docs/images/gallery_stubble.png) | [<img src="docs/images/gallery_sunflower_thumb.png" width="320">](docs/images/gallery_sunflower.png) | [<img src="docs/images/gallery_cabbage_thumb.png" width="320">](docs/images/gallery_cabbage.png) |
 
 **정리하면**, 이 규칙 기반 파이프라인이 잘 동작하려면 세 조건이 동시에 맞아야 합니다:
 1. **살아있는 초록 식생**이어야 함 (마르거나 추수된 상태는 안 됨)
