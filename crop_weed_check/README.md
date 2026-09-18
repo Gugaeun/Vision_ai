@@ -87,13 +87,9 @@
 |---|---|---|
 | [<img src="docs/images/gallery_stubble_thumb.png" width="320">](docs/images/gallery_stubble.png) | [<img src="docs/images/gallery_sunflower_thumb.png" width="320">](docs/images/gallery_sunflower.png) | [<img src="docs/images/gallery_cabbage_thumb.png" width="320">](docs/images/gallery_cabbage.png) |
 
-| 배경 나무 (배경이 지배) | 간격 넓은 채소밭 (밀도 가정 어긋남) |
-|---|---|
-| [<img src="docs/images/gallery_background_thumb.png" width="320">](docs/images/gallery_background.png) | [<img src="docs/images/gallery_spacing_thumb.png" width="320">](docs/images/gallery_spacing.png) |
-
-| 역광 (아래에서 위로 촬영) | |
-|---|---|
-| [<img src="docs/images/gallery_backlit_thumb.png" width="320">](docs/images/gallery_backlit.png) | |
+| 배경 나무 (배경이 지배) | 간격 넓은 채소밭 (밀도 가정 어긋남) | 역광 (아래에서 위로 촬영) |
+|---|---|---|
+| [<img src="docs/images/gallery_background_thumb.png" width="320">](docs/images/gallery_background.png) | [<img src="docs/images/gallery_spacing_thumb.png" width="320">](docs/images/gallery_spacing.png) | [<img src="docs/images/gallery_backlit_thumb.png" width="320">](docs/images/gallery_backlit.png) |
 
 ### 설정값을 튜닝하면 역광 사진도 고칠 수 있을까?
 
