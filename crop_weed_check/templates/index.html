@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>어디에 방제가 필요한가요? — 고랑·잡초 판단 데모</title>
+
+<!--
+  왜 이 기술이 필요한가 (필수 요건 문장):
+  잡초를 자동으로 구분하면 밭 전체가 아니라 필요한 지점에만 제초제를 뿌릴 수 있어,
+  비용과 환경 부담을 크게 줄일 수 있기 때문이다.
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+  rel="stylesheet"
+/>
+
+<style>
+  :root {
+    --bg: #12161d;
+    --panel: #1b212b;
+    --panel-2: #212834;
+    --border: #2a3240;
+    --text: #ece7dd;
+    --text-dim: #97a1b0;
+    --text-faint: #626c7c;
+    --focus: #f2b705;
+    --focus-dim: #7a610c;
+    --away: #e8734a;
+    --ok: #49b3a4;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font-family: 'Inter', -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { min-height: 100vh; padding: 40px 24px 80px; }
+  .wrap { max-width: 1020px; margin: 0 auto; }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(28px, 4vw, 38px);
+    line-height: 1.2;
+    margin: 0 0 14px;
+    max-width: 20ch;
+    letter-spacing: -0.01em;
+  }
+  .lede { color: var(--text-dim); font-size: 15px; line-height: 1.65; max-width: 60ch; margin: 0 0 18px; }
+  .rationale {
+    border-left: 2px solid var(--focus-dim);
+    padding: 4px 0 4px 14px;
+    color: var(--text-faint);
+    font-size: 13.5px; line-height: 1.6; max-width: 60ch;
+    margin-bottom: 32px;
+  }
+  .rationale b { color: var(--text-dim); font-weight: 500; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+  }
+  .panel h2 {
+    font-size: 13px; font-weight: 600; color: var(--text-dim);
+    margin: 0; padding: 16px 18px; border-bottom: 1px solid var(--border);
+  }
+  .panel-body { padding: 18px; }
+
+  .drop {
+    border: 1.5px dashed var(--border);
+    border-radius: 8px;
+    min-height: 220px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; color: var(--text-faint); font-size: 13.5px; text-align: center;
+    cursor: pointer; padding: 16px; position: relative;
+  }
+  .drop.has-image { border-style: solid; padding: 0; overflow: hidden; cursor: default; }
+  .drop input[type=file] { display: none; }
+  .drop img.preview { width: 100%; display: block; }
+
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; padding: 0 18px 16px; font-size: 12.5px; color: var(--text-dim); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+  .sw-furrow { background: #24c760; opacity: .55; }
+  .sw-crop { background: #24c760; }
+  .sw-weed-out { background: #ffd21a; }
+  .sw-target { background: #ff3b3b; }
+
+  button.btn {
+    appearance: none; border: 1px solid var(--border); background: var(--panel-2);
+    color: var(--text); font-size: 13.5px; font-weight: 600; padding: 11px 18px;
+    border-radius: 7px; cursor: pointer; transition: background .15s ease, opacity .15s ease;
+  }
+  button.btn:hover:not(:disabled) { border-color: #3a4454; }
+  button.btn:disabled { opacity: .4; cursor: not-allowed; }
+  button.btn.primary { background: var(--focus); border-color: var(--focus); color: #1a1305; width: 100%; }
+  button.btn.primary:hover:not(:disabled) { background: #ffc821; }
+
+  .result-summary {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .stat { padding: 16px 18px; border-right: 1px solid var(--border); }
+  .stat:last-child { border-right: none; }
+  .stat .label { font-size: 11.5px; color: var(--text-faint); margin-bottom: 4px; }
+  .stat .val { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; }
+  .stat.targets .val { color: var(--away); }
+  .stat.targets .val.zero { color: var(--ok); }
+
+  .result-img {
+    width: 100%; max-height: 62vh; object-fit: contain;
+    display: block; margin: 0 auto; background: #0a0d12;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mode-note { padding: 12px 18px; font-size: 12.5px; color: var(--text-faint); border-bottom: 1px solid var(--border); }
+  .mode-note b { color: var(--text-dim); }
+
+  table.detections { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.detections th {
+    text-align: left; color: var(--text-faint); font-weight: 500; font-size: 12px;
+    padding: 12px 18px 8px;
+  }
+  table.detections td { padding: 8px 18px; border-top: 1px solid var(--border); }
+  table.detections td.mono { font-family: 'JetBrains Mono', monospace; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+  .tag.crop { background: rgba(36,199,96,.18); color: #4fd884; }
+  .tag.weed-out { background: rgba(255,210,26,.18); color: #ffd21a; }
+  .tag.target { background: rgba(255,59,59,.18); color: #ff6b6b; }
+
+  .status-line {
+    display: none; align-items: center; gap: 10px; color: var(--text-dim);
+    font-size: 13.5px; padding: 14px 18px;
+  }
+  .status-line.show { display: flex; }
+  .status-line.error { color: #f0a888; }
+  .dot-spin {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--focus);
+    animation: pulse 1.2s ease-in-out infinite; flex: none;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.35;transform:scale(.7)} }
+  @media (prefers-reduced-motion: reduce) { .dot-spin { animation: none; } }
+
+  footer { margin-top: 30px; color: var(--text-faint); font-size: 12.5px; line-height: 1.7; max-width: 62ch; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>어디에 방제가 필요한가요?</h1>
+    <p class="lede">
+      밭 사진을 올리면 고랑(작물 재배 영역)을 분할하고, 그 위의 개별 식물체를 탐지해
+      "고랑 안인데 잡초로 판정된 개체"만 방제 대상으로 표시합니다.
+    </p>
+    <p class="rationale">
+      <b>왜 이 기술이 필요한가.</b>
+      잡초를 자동으로 구분하면 밭 전체가 아니라 필요한 지점에만 제초제를 뿌릴 수 있어,
+      비용과 환경 부담을 크게 줄일 수 있기 때문이다.
+    </p>
+  </header>
+
+  <div class="panel">
+    <h2>1. 밭 사진</h2>
+    <div class="panel-body">
+      <div class="drop" id="dropZone">
+        <span id="dropHint">클릭하거나 이미지를 드래그해서 올려주세요</span>
+        <input type="file" id="fileInput" accept="image/*" />
+        <img class="preview" id="previewImg" style="display:none;" />
+      </div>
+    </div>
+    <button class="btn primary" id="btnAnalyze" style="margin:0 18px 18px; width:calc(100% - 36px);">분석 실행</button>
+  </div>
+
+  <div class="panel" id="statusPanel">
+    <div class="status-line" id="statusLine"><span class="dot-spin"></span><span id="statusText"></span></div>
+  </div>
+
+  <div class="panel" id="resultPanel" style="display:none;">
+    <h2>2. 판단 결과</h2>
+    <div class="result-summary">
+      <div class="stat targets">
+        <div class="label">방제 필요</div>
+        <div class="val" id="statTargets">0</div>
+      </div>
+      <div class="stat">
+        <div class="label">작물(crop)</div>
+        <div class="val" id="statCrop">0</div>
+      </div>
+      <div class="stat">
+        <div class="label">잡초(weed)</div>
+        <div class="val" id="statWeed">0</div>
+      </div>
+      <div class="stat">
+        <div class="label">처리 FPS</div>
+        <div class="val" id="statFps">0</div>
+      </div>
+    </div>
+    <div class="mode-note" id="modeNote"></div>
+    <div class="legend">
+      <span><i class="swatch sw-furrow"></i>고랑(작물 재배 영역)</span>
+      <span><i class="swatch sw-crop"></i>작물</span>
+      <span><i class="swatch sw-weed-out"></i>고랑 밖 잡초(무시)</span>
+      <span><i class="swatch sw-target"></i>방제 대상</span>
+    </div>
+    <img id="resultImg" class="result-img" alt="분석 결과 이미지" />
+    <table class="detections" id="detTable">
+      <thead><tr><th>판정</th><th>점수</th><th>고랑 안</th><th>위치(x1,y1,x2,y2)</th></tr></thead>
+      <tbody id="detBody"></tbody>
+    </table>
+  </div>
+
+  <footer>
+    1단계 고랑 분할은 ExG(Excess Green Index) 규칙 기반으로 동작하며, 학습 데이터가 필요 없습니다.
+    2단계 개별 식물체 crop/weed 분류는 <code>models/yolov8_crop_weed.pt</code>가 있으면 그 모델을 쓰고,
+    없으면 면적·볼록도 기반 규칙으로 대체됩니다(정확도가 낮을 수 있음 — 포트폴리오 확장 포인트).
+  </footer>
+
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+const dropZone = $("dropZone");
+const fileInput = $("fileInput");
+const previewImg = $("previewImg");
+let selectedFile = null;
+
+dropZone.addEventListener("click", () => fileInput.click());
+dropZone.addEventListener("dragover", (e) => e.preventDefault());
+dropZone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener("change", (e) => {
+  if (e.target.files && e.target.files[0]) loadFile(e.target.files[0]);
+});
+
+function loadFile(file) {
+  selectedFile = file;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    previewImg.src = ev.target.result;
+    previewImg.style.display = "block";
+    $("dropHint").style.display = "none";
+    dropZone.classList.add("has-image");
+  };
+  reader.readAsDataURL(file);
+}
+
+const statusLine = $("statusLine");
+const statusText = $("statusText");
+function showStatus(text, isError) {
+  statusText.textContent = text;
+  statusLine.classList.add("show");
+  statusLine.classList.toggle("error", !!isError);
+}
+function hideStatus() { statusLine.classList.remove("show"); }
+
+$("btnAnalyze").addEventListener("click", async () => {
+  if (!selectedFile) { showStatus("먼저 밭 사진을 올려주세요.", true); return; }
+
+  $("btnAnalyze").disabled = true;
+  $("resultPanel").style.display = "none";
+  showStatus("분석 중입니다...", false);
+
+  try {
+    const formData = new FormData();
+    formData.append("image", selectedFile);
+
+    const res = await fetch("/api/analyze", { method: "POST", body: formData });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showStatus(data.error || "오류가 발생했습니다.", true);
+      return;
+    }
+    hideStatus();
+    renderResult(data);
+  } catch (err) {
+    showStatus("서버와 통신하지 못했습니다. 서버가 실행 중인지 확인해주세요.", true);
+  } finally {
+    $("btnAnalyze").disabled = false;
+  }
+});
+
+function renderResult(data) {
+  $("resultPanel").style.display = "block";
+  $("resultImg").src = data.image;
+
+  const s = data.summary;
+  const targetsEl = $("statTargets");
+  targetsEl.textContent = s.treatment_targets;
+  targetsEl.classList.toggle("zero", s.treatment_targets === 0);
+  $("statCrop").textContent = s.total_crop;
+  $("statWeed").textContent = s.total_weed;
+  $("statFps").textContent = s.fps;
+
+  const modeLabel = s.detector_mode === "yolo" ? "학습된 YOLOv8 crop/weed 모델" : "규칙 기반(면적·볼록도) 분류 — 아직 학습 모델 없음";
+  $("modeNote").innerHTML = `탐지 방식: <b>${modeLabel}</b>`;
+
+  const detBody = $("detBody");
+  detBody.innerHTML = "";
+  for (const p of data.plants) {
+    const tr = document.createElement("tr");
+    let tagClass = p.label === "crop" ? "crop" : (p.treatment_target ? "target" : "weed-out");
+    let tagText = p.treatment_target ? "방제 대상" : (p.label === "crop" ? "작물" : "잡초(고랑 밖)");
+    tr.innerHTML = `
+      <td><span class="tag ${tagClass}">${tagText}</span></td>
+      <td class="mono">${p.confidence}</td>
+      <td class="mono">${p.in_furrow ? "O" : "X"}</td>
+      <td class="mono">${p.box.join(", ")}</td>
+    `;
+    detBody.appendChild(tr);
+  }
+  $("resultPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+</script>
+</body>
+</html>

@@ -17,6 +17,7 @@ HumanEmojiConverter/pose_img/person/keypoints.csv
 CrowdDemographics/videos/*.mp4
 CrowdDemographics/videos/*.avi
 CrowdDemographics/videos/*.mov
+crop_weed_check/sample_data/*
 
 # OS
 .DS_Store

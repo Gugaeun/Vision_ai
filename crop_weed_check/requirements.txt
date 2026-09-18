@@ -1,0 +1,8 @@
+flask
+opencv-contrib-python==4.14.0.94
+numpy
+pillow
+ultralytics
+psutil
+onnx
+onnxruntime
