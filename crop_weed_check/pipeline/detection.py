@@ -46,14 +46,20 @@ def detect_plants_yolo(bgr_image, conf_threshold=0.3):
     return plants
 
 
+DENSITY_THRESHOLD = 0.30  # 이 이상이면 "빽빽하게 심긴 줄 안"으로 보고 crop 판정
+
+
 def detect_plants_rule_based(bgr_image):
     """
     MVP 규칙 기반 개별 식물체 탐지 + crop/weed 분류 (학습 데이터 불필요).
 
     1) ExG로 식생 픽셀을 찾고, 연결 성분마다 하나의 "개체"로 취급.
-    2) 화면 전체 식생 덩어리들의 중앙값 면적을 기준으로,
-       면적이 크고 둥글게 뭉친(볼록도가 높은) 개체는 보통 관리된 작물,
-       작고 삐죽삐죽한(볼록도가 낮은) 개체는 잡초로 보는 휴리스틱을 적용.
+    2) crop/weed 판정은 "주변 밀도"로 한다 — 실제로 심어진 작물은 촘촘하게 줄지어
+       자라서 주변에도 식생 픽셀이 빽빽하고(캐노피가 이어짐), 잡초는 이랑 사이
+       빈 흙에 듬성듬성 홀로 자라서 주변이 휑하다는 관찰에 기반한다.
+       (처음엔 "면적·볼록도"로 판정했는데, 실제 사진에서는 작물 잎 하나하나의
+        모양이 제각각이라 그 기준만으로는 오판이 너무 많았다 — 아래
+        "겪었던 문제" README 참고)
        (실제 서비스에서는 이 부분을 YOLOv8 crop/weed 분류 모델로 교체 — YOLO_WEIGHTS_PATH 참고)
     """
     img = bgr_image.astype(np.float32)
@@ -76,25 +82,27 @@ def detect_plants_rule_based(bgr_image):
             # 캐노피가 겹쳐서 여러 포기가 뭉친 덩어리 — 개별 개체로 볼 수 없으므로 제외.
             # (이걸 포함하면 화면 절반을 덮는 박스가 잡초 하나로 오판되는 문제가 생긴다.)
             continue
-        hull = cv2.convexHull(c)
-        hull_area = max(cv2.contourArea(hull), 1e-6)
-        solidity = area / hull_area
         x, y, w, h = cv2.boundingRect(c)
-        candidates.append({"box": [x, y, x + w, y + h], "area": area, "solidity": solidity})
+        candidates.append({"box": [x, y, x + w, y + h], "area": area})
 
     if not candidates:
         return []
 
-    areas = np.array([c["area"] for c in candidates])
-    median_area = float(np.median(areas))
-
     plants = []
     for c in candidates:
-        is_crop_like = (c["area"] >= median_area * 0.8) and (c["solidity"] >= 0.55)
+        x1, y1, x2, y2 = c["box"]
+        bw, bh = x2 - x1, y2 - y1
+        # 개체 크기의 1.5배만큼 여유를 두고 주변 영역을 잘라 식생 밀도를 잰다.
+        pad_x, pad_y = int(bw * 1.5) + 10, int(bh * 1.5) + 10
+        wx1, wy1 = max(0, x1 - pad_x), max(0, y1 - pad_y)
+        wx2, wy2 = min(img_w, x2 + pad_x), min(img_h, y2 + pad_y)
+        window = veg_mask[wy1:wy2, wx1:wx2]
+        density = float(np.count_nonzero(window)) / window.size if window.size else 0.0
+
+        is_crop_like = density >= DENSITY_THRESHOLD
         label = "crop" if is_crop_like else "weed"
-        # 규칙 기반 점수(확신도 아님) — 면적비와 볼록도를 0~1로 합성
-        score = min(1.0, 0.5 * (c["area"] / (median_area * 2 + 1e-6)) + 0.5 * c["solidity"])
-        plants.append({"label": label, "confidence": round(float(score), 3), "box": c["box"]})
+        score = min(1.0, density / (DENSITY_THRESHOLD * 2))
+        plants.append({"label": label, "confidence": round(score, 3), "box": c["box"]})
     return plants
 
 
