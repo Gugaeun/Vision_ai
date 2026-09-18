@@ -72,6 +72,17 @@ def detect_plants_rule_based(bgr_image):
     img_h, img_w = bgr_image.shape[:2]
     max_plant_area = 0.08 * img_h * img_w  # 이보다 크면 "포기 하나"가 아니라 여러 포기가 붙은 덩어리로 간주
 
+    # 화면을 절반 가까이 덮는 큰 덩어리 = 여러 포기가 이어져 자란 "작물 줄(캐노피)" 그 자체.
+    # 이 덩어리에 직접 맞닿아 있는 개체는 사실상 그 줄의 일부(줄 맨 끝 포기 등)인데,
+    # 밀도 계산용 사각 윈도우는 한쪽 방향(줄 바깥쪽)에 이웃이 없어서 밀도가 낮게 나오고
+    # weed로 오판되는 경우가 있었다. 그래서 "큰 캐노피에 맞닿아 있는가"를 밀도보다 먼저 본다.
+    n_labels, labels_img, stats, _ = cv2.connectedComponentsWithStats(veg_mask, connectivity=8)
+    canopy_mask = np.zeros_like(veg_mask)
+    for i in range(1, n_labels):
+        if stats[i, cv2.CC_STAT_AREA] > max_plant_area:
+            canopy_mask[labels_img == i] = 255
+    canopy_mask = cv2.dilate(canopy_mask, np.ones((15, 15), np.uint8))
+
     contours, _ = cv2.findContours(veg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     candidates = []
     for c in contours:
@@ -91,15 +102,22 @@ def detect_plants_rule_based(bgr_image):
     plants = []
     for c in candidates:
         x1, y1, x2, y2 = c["box"]
-        bw, bh = x2 - x1, y2 - y1
-        # 개체 크기의 1.5배만큼 여유를 두고 주변 영역을 잘라 식생 밀도를 잰다.
-        pad_x, pad_y = int(bw * 1.5) + 10, int(bh * 1.5) + 10
-        wx1, wy1 = max(0, x1 - pad_x), max(0, y1 - pad_y)
-        wx2, wy2 = min(img_w, x2 + pad_x), min(img_h, y2 + pad_y)
-        window = veg_mask[wy1:wy2, wx1:wx2]
-        density = float(np.count_nonzero(window)) / window.size if window.size else 0.0
 
-        is_crop_like = density >= DENSITY_THRESHOLD
+        touches_canopy = bool(np.count_nonzero(canopy_mask[y1:y2, x1:x2]))
+        if touches_canopy:
+            # 큰 작물 줄 캐노피에 직접 맞닿은 개체는 밀도 계산 없이 바로 crop으로 판정.
+            is_crop_like = True
+            density = 1.0
+        else:
+            bw, bh = x2 - x1, y2 - y1
+            # 개체 크기의 1.5배만큼 여유를 두고 주변 영역을 잘라 식생 밀도를 잰다.
+            pad_x, pad_y = int(bw * 1.5) + 10, int(bh * 1.5) + 10
+            wx1, wy1 = max(0, x1 - pad_x), max(0, y1 - pad_y)
+            wx2, wy2 = min(img_w, x2 + pad_x), min(img_h, y2 + pad_y)
+            window = veg_mask[wy1:wy2, wx1:wx2]
+            density = float(np.count_nonzero(window)) / window.size if window.size else 0.0
+            is_crop_like = density >= DENSITY_THRESHOLD
+
         label = "crop" if is_crop_like else "weed"
         score = min(1.0, density / (DENSITY_THRESHOLD * 2))
         plants.append({"label": label, "confidence": round(score, 3), "box": c["box"]})
