@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+from pipeline.segmentation import compute_vegetation_mask
+
 # 확장 시 이 경로에 학습된 YOLOv8 (crop/weed 2class) 가중치를 두면
 # detect_plants()가 자동으로 규칙 기반 대신 이 모델을 사용하도록 바뀐다.
 YOLO_WEIGHTS_PATH = "models/yolov8_crop_weed.pt"
@@ -62,11 +64,7 @@ def detect_plants_rule_based(bgr_image):
         "겪었던 문제" README 참고)
        (실제 서비스에서는 이 부분을 YOLOv8 crop/weed 분류 모델로 교체 — YOLO_WEIGHTS_PATH 참고)
     """
-    img = bgr_image.astype(np.float32)
-    b, g, r = img[:, :, 0], img[:, :, 1], img[:, :, 2]
-    exg = np.clip(2 * g - r - b, 0, None)
-    exg_u8 = cv2.normalize(exg, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    _, veg_mask = cv2.threshold(exg_u8, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    veg_mask = compute_vegetation_mask(bgr_image)
     veg_mask = cv2.morphologyEx(veg_mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
 
     img_h, img_w = bgr_image.shape[:2]

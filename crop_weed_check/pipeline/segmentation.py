@@ -2,13 +2,14 @@ import cv2
 import numpy as np
 
 
-def segment_furrow(bgr_image):
+def compute_vegetation_mask(bgr_image):
     """
-    ExG(Excess Green Index) 기반 규칙형 고랑(작물 재배 영역) 분할.
-    학습 데이터 없이, "초록색이 많이 섞인 영역"을 식생 영역으로 보고
-    그 중 화면 하단부에 넓게 퍼진 덩어리를 고랑으로 간주한다.
+    ExG(Excess Green Index) 기반 식생 픽셀 마스크. segmentation/detection이 공용으로 쓴다.
 
-    반환: mask (uint8, 0/255), shape = (H, W) — 255인 곳이 고랑(작물 재배 영역)
+    파란 하늘·구름 경계의 JPEG 압축 아티팩트(R≈0, B가 G보다 훨씬 큰 픽셀)가
+    ExG 계산에서 간간이 "식생"으로 오탐되는 걸 실제 사진(옥수수밭 + 파란 하늘)에서
+    확인했다. 진짜 식생은 항상 G > B이므로, B가 G보다 큰 픽셀은 애초에 식생 후보에서
+    제외해서 하늘/구름 오탐을 막는다.
     """
     img = bgr_image.astype(np.float32)
     b, g, r = img[:, :, 0], img[:, :, 1], img[:, :, 2]
@@ -20,6 +21,23 @@ def segment_furrow(bgr_image):
 
     # Otsu로 식생/배경 자동 분리
     _, veg_mask = cv2.threshold(exg_u8, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # 하늘/구름 오탐 방지: 진짜 식생은 G > B 이어야 함
+    sky_like = b > g
+    veg_mask[sky_like] = 0
+
+    return veg_mask
+
+
+def segment_furrow(bgr_image):
+    """
+    ExG(Excess Green Index) 기반 규칙형 고랑(작물 재배 영역) 분할.
+    학습 데이터 없이, "초록색이 많이 섞인 영역"을 식생 영역으로 보고
+    그 중 화면 하단부에 넓게 퍼진 덩어리를 고랑으로 간주한다.
+
+    반환: mask (uint8, 0/255), shape = (H, W) — 255인 곳이 고랑(작물 재배 영역)
+    """
+    veg_mask = compute_vegetation_mask(bgr_image)
 
     # 작은 잡음 제거 + 구멍 메우기 (고랑은 연속된 큰 영역이어야 함)
     kernel = np.ones((9, 9), np.uint8)
