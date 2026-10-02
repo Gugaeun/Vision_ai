@@ -13,5 +13,6 @@ Vision AI 실습 프로젝트 모음 저장소입니다. 프로젝트별로 폴�
 | [`HumanEmojiConverter/`](HumanEmojiConverter) | YOLO-Pose + XGBoost로 자세(턱 괴기/양손 들기/양손 얼굴 가리기)를 분류해 실시간으로 이모지 얼굴을 띄우는 데모 |
 | [`CrowdDemographics/`](CrowdDemographics) | DeepFace로 군중 영상 속 얼굴들의 나이·성별·감정을 집계해 인구통계 리포트를 만드는 데모 |
 | [`crop_weed_check/`](crop_weed_check) | 밭 사진에서 고랑(재배 영역)을 분할하고 개별 식물체를 탐지해 "고랑 안 잡초"만 방제 대상으로 표시하는 데모 |
+| [`anomaly_robustness/`](anomaly_robustness) | PatchCore 이상 탐지 모델(hazelnut)에 밝기·회전 변형을 가해 성능이 어디서부터 무너지는지 측정하는 강건성 실험 |
 
 `Requirements_DINO`/`Requirements_YOLO`/`Requirements_YOLOE` 세 구현을 같은 사진·프롬프트로 비교한 내용은 [`docs/comparison.md`](docs/comparison.md)에 정리해뒀습니다.

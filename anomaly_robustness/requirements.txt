@@ -1,0 +1,8 @@
+# 별도 conda 환경 권장 (vision_ai2의 torch 버전과 충돌 위험 — README 참고)
+#   conda create -n anomaly_env python=3.11
+#   conda activate anomaly_env
+#   pip install "anomalib[cpu]" matplotlib
+#   # GPU 쓰려면 아래로 torch 교체:
+#   pip install torch==2.12.0 torchvision==0.27.0 --index-url https://download.pytorch.org/whl/cu130 --force-reinstall --no-cache-dir
+anomalib[cpu]
+matplotlib

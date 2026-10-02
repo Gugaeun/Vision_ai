@@ -1,0 +1,16 @@
+condition,defect_type,total,correct,accuracy
+baseline,crack,18,18,1.0
+baseline,cut,17,16,0.9412
+baseline,good,40,40,1.0
+baseline,hole,18,18,1.0
+baseline,print,17,17,1.0
+brightness_1.6,crack,18,18,1.0
+brightness_1.6,cut,17,17,1.0
+brightness_1.6,good,40,39,0.975
+brightness_1.6,hole,18,18,1.0
+brightness_1.6,print,17,17,1.0
+rotation_45,crack,18,18,1.0
+rotation_45,cut,17,17,1.0
+rotation_45,good,40,4,0.1
+rotation_45,hole,18,18,1.0
+rotation_45,print,17,17,1.0

@@ -18,6 +18,9 @@ CrowdDemographics/videos/*.mp4
 CrowdDemographics/videos/*.avi
 CrowdDemographics/videos/*.mov
 crop_weed_check/sample_data/*
+anomaly_robustness/checkpoints_merged/
+anomaly_robustness/logs/
+anomaly_robustness/results/Patchcore/
 
 # OS
 .DS_Store
